@@ -1,0 +1,144 @@
+---
+title: "SA2"
+author: "Dizon, Kiana Marie"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+This analysis investigates the effect of drug treatments and Alzheimer's Disease (AD) status on errors made by mice in a maze during training and memory tests. A 2-Factor (2B) ANOVA is conducted to determine whether there are main effects and/or interactions between these factors.
+
+## Load Dataset
+```{r load-data}
+data <- data.frame(
+  AD_Status = factor(rep(c(1, 2), each = 20)),
+  Treatment = factor(rep(1:4, each = 5, times = 2)),
+  Training = c(12, 15, 13, 12, 14, 15, 17, 16, 17, 14, 13, 14, 18, 15, 16, 14, 13, 12, 14, 15, 
+               17, 16, 17, 14, 13, 14, 18, 16, 17, 14, 13, 14, 18, 15, 16, 14, 13, 12, 14, 15),
+  Memory = c(10, 12, 13, 10, 13, 13, 13, 14, 15, 11, 12, 11, 15, 10, 14, 12, 11, 10, 13, 10, 
+             9, 8, 10, 8, 8, 7, 10, 5, 9, 7, 8, 7, 9, 8, 9, 7, 9, 5, 8, 4)
+)
+```
+
+## Summary Statistics
+```{r summary-stats}
+library(dplyr)
+summary_data <- data %>% 
+  group_by(AD_Status, Treatment) %>% 
+  summarise(
+    Training_Mean = mean(Training),
+    Training_SD = sd(Training),
+    Memory_Mean = mean(Memory),
+    Memory_SD = sd(Memory),
+    .groups = 'drop'
+  )
+knitr::kable(summary_data, caption = "Summary Statistics by Group")
+```
+
+## Assumption Checking
+### Normality
+```{r normality}
+library(car)
+# Shapiro-Wilk test for normality of residuals
+training_model <- aov(Training ~ AD_Status * Treatment, data = data)
+memory_model <- aov(Memory ~ AD_Status * Treatment, data = data)
+
+shapiro_training <- shapiro.test(residuals(training_model))
+shapiro_memory <- shapiro.test(residuals(memory_model))
+shapiro_training$p.value # Training residuals
+shapiro_memory$p.value # Memory residuals
+```
+
+### Homogeneity of Variance
+```{r homogeneity}
+levene_training <- leveneTest(Training ~ AD_Status * Treatment, data = data)
+levene_memory <- leveneTest(Memory ~ AD_Status * Treatment, data = data)
+levene_training
+levene_memory
+```
+
+## 2-Factor ANOVA Results
+### Training Day Errors
+```{r anova-training}
+summary(training_model)
+```
+
+### Memory Day Errors
+```{r anova-memory}
+summary(memory_model)
+```
+
+## Effect Sizes
+```{r effect-size}
+# Calculate partial eta squared
+eta_squared_training <- anova(training_model)[["Sum Sq"]][1:3] / sum(anova(training_model)[["Sum Sq"]])
+eta_squared_memory <- anova(memory_model)[["Sum Sq"]][1:3] / sum(anova(memory_model)[["Sum Sq"]])
+
+eta_squared_training
+eta_squared_memory
+```
+
+## APA-Style Report
+Based on the 2-Factor ANOVA:
+
+# Introduction
+This report analyzes the Alzheimer’s Mice dataset using a 2-Factor ANOVA to examine the effects of AD_Status and Treatment on training day errors and memory day errors. The assumptions of normality and homogeneity of variance were checked, and effect sizes were calculated. Results are reported in APA format.
+
+# Method
+## Dataset Description
+The dataset includes errors made by transgenic and wild-type mice during maze tests under four different drug treatments. Errors were recorded on both the Training Day and Memory Day.
+
+## Statistical Tests
+1. **Normality of Residuals**: Shapiro-Wilk test
+2. **Homogeneity of Variance**: Levene’s test
+3. **2-Factor ANOVA**: Interaction and main effects of AD_Status and Treatment
+4. **Effect Size**: Partial eta squared
+
+# Results
+
+## Assumption Checks
+### Normality of Residuals
+Shapiro-Wilk test results indicated that residuals followed a normal distribution:
+
+- Training Day: *W* = 0.99, *p* = 0.221
+- Memory Day: *W* = 0.99, *p* = 0.282
+
+### Homogeneity of Variance
+Levene’s test indicated homogeneity of variances across groups:
+
+- Training Day: *F*(7, 32) = 0.435, *p* = 0.873
+- Memory Day: *F*(7, 32) = 0.828, *p* = 0.572
+
+## 2-Factor ANOVA Results
+### Training Day Errors
+A 2-Factor ANOVA revealed:
+
+- **Main Effect of AD_Status**: *F*(1, 32) = 1.22, *p* = 0.278, partial η² = 0.025
+- **Main Effect of Treatment**: *F*(3, 32) = 3.79, *p* = 0.020, partial η² = 0.236
+- **Interaction (AD_Status × Treatment)**: *F*(3, 32) = 1.22, *p* = 0.320, partial η² = 0.076
+
+### Memory Day Errors
+A 2-Factor ANOVA revealed:
+
+- **Main Effect of AD_Status**: *F*(1, 32) = 75.31, *p* < 0.001, partial η² = 0.646
+- **Main Effect of Treatment**: *F*(3, 32) = 1.92, *p* = 0.146, partial η² = 0.049
+- **Interaction (AD_Status × Treatment)**: *F*(3, 32) = 1.15, *p* = 0.344, partial η² = 0.030
+
+# Discussion
+
+### Summary of Results
+- For Training Day errors, Treatment had a significant main effect (*p* = 0.020), with a medium effect size (partial η² = 0.236). Neither AD_Status nor the interaction between AD_Status and Treatment were significant.
+- For Memory Day errors, AD_Status had a significant main effect (*p* < 0.001), with a large effect size (partial η² = 0.646). Neither Treatment nor the interaction were significant.
+
+### Assumptions
+Both normality and homogeneity of variance assumptions were satisfied for the Training and Memory Day error models.
+
+### Interpretation
+The significant effect of AD_Status on Memory Day errors suggests that Alzheimer’s disease status substantially impacts memory performance. The significant effect of Treatment on Training Day errors indicates that drug treatments influence initial learning. However, the lack of interaction effects implies that the influence of treatment does not differ between transgenic and wild-type mice.
+
+# Conclusion
+This study highlights the importance of AD_Status and drug treatments in influencing maze performance in mice. Further research could explore specific drug mechanisms and their interactions with genetic status.
